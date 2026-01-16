@@ -6,22 +6,29 @@ from a2a.utils import get_message_text, new_agent_text_message
 
 from messenger import Messenger
 
-
 class EvalRequest(BaseModel):
     """Request format sent by the AgentBeats platform to green agents."""
     participants: dict[str, HttpUrl] # role -> agent URL
     config: dict[str, Any]
 
-
+TERMINAL_STATES = {
+    TaskState.completed,
+    TaskState.canceled,
+    TaskState.failed,
+    TaskState.rejected
+}
 class Agent:
     # Fill in: list of required participant roles, e.g. ["pro_debater", "con_debater"]
-    required_roles: list[str] = []
+    required_roles: list[str] = ["positive-debater", "negative-debater"]
     # Fill in: list of required config keys, e.g. ["topic", "num_rounds"]
-    required_config_keys: list[str] = []
+    required_config_keys: list[str] = ["topic", "program"]
 
     def __init__(self):
         self.messenger = Messenger()
         # Initialize other state here
+        self.config = []
+        self.state = "Initial"
+        self.terminal_state = TaskState.working
 
     def validate_request(self, request: EvalRequest) -> tuple[bool, str]:
         missing_roles = set(self.required_roles) - set(request.participants.keys())
